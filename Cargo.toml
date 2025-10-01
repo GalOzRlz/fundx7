@@ -1,0 +1,20 @@
+[package]
+name = "dx7"
+version = "0.0.2"
+edition = "2024"
+authors = ["Tyler Neely"]
+description = "Rust port of Mutable Instruments Plaits DX7/FM synthesis engine"
+license = "MIT"
+repository = "https://github.com/spacejam/dx7"
+keywords = ["audio", "synthesis", "fm", "dx7", "dsp"]
+categories = ["multimedia::audio"]
+
+[features]
+fast_op_level_modulation = []
+
+[dev-dependencies]
+anyhow = "1.0.100"
+env_logger = "0.11.8"
+hound = "3.5.1"
+log = "0.4.28"
+rustfft = "6.4.1"
