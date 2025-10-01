@@ -202,6 +202,11 @@ impl Default for Patch {
 }
 
 impl Patch {
+    /// Returns the name of the Patch as a trimmed String.
+    pub fn name(&self) -> String {
+        format!("{}", self.name.iter().collect::<String>().trim())
+    }
+
     /// Set the 1-offset operator number corresponding to DX7 patches. Internally this is mapped to
     /// a 0-offset reverse ordered sequence.
     pub fn set_op(&mut self, idx: usize, operator: Operator) {
