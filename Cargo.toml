@@ -12,6 +12,8 @@ categories = ["multimedia::audio"]
 
 [features]
 fast_op_level_modulation = []
+[dependencies]
+fundsp = "0.23.0"
 
 [dev-dependencies]
 anyhow = "1.0.100"

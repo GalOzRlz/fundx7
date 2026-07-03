@@ -23,6 +23,12 @@
 
 //! DX7 voice - main synthesis entry point
 
+use fundsp::audionode::AudioNode;
+use fundsp::{Frame, GenericSequence};
+use fundsp::buffer::{BufferMut, BufferRef};
+use fundsp::numeric_array::generic_array::{GenericArray};
+use fundsp::prelude64::{U1, U2};
+use crate::fm::lfo::Lfo;
 use super::algorithms::Algorithms;
 use super::dx_units::{
     amp_mod_sensitivity, frequency_ratio, keyboard_scaling, normalize_velocity, operator_level,
@@ -33,9 +39,10 @@ use super::operator::Operator;
 use super::patch::Patch;
 
 use crate::stmlib::dsp::semitones_to_ratio_safe;
-use crate::NUM_OPERATORS;
+use crate::{MAX_BLOCK_SIZE, NUM_OPERATORS, SAMPLE_RATE};
 
 /// Voice parameters for rendering
+#[derive(Clone, Copy, Debug)]
 pub struct Parameters {
     /// Sustain mode (envelope scrubbing)
     pub sustain: bool,
@@ -53,6 +60,7 @@ pub struct Parameters {
     pub pitch_mod: f32,
     /// Amplitude modulation amount
     pub amp_mod: f32,
+
 }
 
 impl Default for Parameters {
@@ -61,7 +69,7 @@ impl Default for Parameters {
             sustain: false,
             gate: false,
             note: 48.0,
-            velocity: 0.5,
+            velocity: 1.0,
             brightness: 0.5,
             envelope_control: 0.5,
             pitch_mod: 0.0,
@@ -71,6 +79,7 @@ impl Default for Parameters {
 }
 
 /// DX7 FM voice
+#[derive(Debug, Clone, Copy)]
 pub struct Voice {
     algorithms: Algorithms,
     sample_rate: f32,
@@ -88,6 +97,9 @@ pub struct Voice {
     feedback_state: [f32; 2],
     patch: Patch,
     dirty: bool,
+    lfo: Lfo,
+    temp_buffer_tick: GenericArray<f32, U1>,
+    parameters: Parameters
 }
 
 impl Voice {
@@ -110,6 +122,9 @@ impl Voice {
             feedback_state: [0.0, 0.0],
             patch,
             dirty: true,
+            temp_buffer_tick: GenericArray::generate(|_| 0.0f32),
+            lfo: Default::default(),
+            parameters: Parameters::default()
         };
 
         let native_sr = 44100.0;
@@ -314,3 +329,35 @@ impl Default for Voice {
         Self::new(Patch::default(), 44100.0)
     }
 }
+
+impl AudioNode for Voice {
+    const ID: u64 = 0;
+
+    type Inputs = U2;
+    type Outputs = U1;
+
+    fn reset(&mut self) {
+        self.lfo.init(SAMPLE_RATE);
+        self.lfo.set(&self.patch.modulations);
+        self.lfo.reset();
+        self.lfo.step(MAX_BLOCK_SIZE as f32);
+        self.parameters.pitch_mod = self.lfo.pitch_mod();
+        self.parameters.amp_mod = self.lfo.amp_mod();
+    }
+
+    fn tick(&mut self, input: &Frame<f32, Self::Inputs>) -> Frame<f32, Self::Outputs> {
+        let gate = input[1] != -1.0;
+        self.parameters.gate = gate;
+        self.parameters.note = input[0];
+        let mut frame = [0.0f32];
+        self.render_temp(&self.parameters.clone(), &mut frame);
+        self.temp_buffer_tick[0] = frame[0];
+        Frame::from(self.temp_buffer_tick.clone())
+    }
+    fn process(&mut self, size: usize, input: &BufferRef, output: &mut BufferMut) {
+        self.parameters.gate = input.at_f32(1, 0) != -1.0;
+        self.parameters.note = input.at_f32(0, 1);
+        self.render_temp(&self.parameters.clone(), output.channel_f32_mut(0));
+    }
+}
+

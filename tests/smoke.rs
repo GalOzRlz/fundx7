@@ -1,15 +1,16 @@
 use std::io::Write;
-
+use fundsp::buffer::BufferVec;
+use fundsp::prelude64::{dc, An};
 use hound::{WavSpec, WavWriter};
 
 mod common;
 
 use common::generate_wav;
-use dx7::PatchBank;
+use dx7::fm::voice::Voice;
+use dx7::{PatchBank, SAMPLE_RATE};
 
 #[test]
 fn smoke_test() {
-    const SAMPLE_RATE: f32 = 44100.0;
 
     let patch_bank_bytes =
         std::fs::read("star1-fast-decay.syx").expect("test file star1-fast-decay.syx not found");
@@ -34,4 +35,21 @@ fn smoke_test() {
         file.write_all(&wav_data).unwrap();
         file.sync_all().unwrap();
     }
+}
+
+#[test]
+fn dsp_test() {
+    let patch_bank_bytes =
+        std::fs::read("star1-fast-decay.syx").expect("test file star1-fast-decay.syx not found");
+
+    let patch_bank = PatchBank::new(&patch_bank_bytes);
+    let patch = patch_bank.patches[4];
+    let voice = Voice::new(patch, SAMPLE_RATE);
+    //                                 midi note 40 | gate on
+    let mut synth = (dc(40.0) |  dc(1.0) ) >> An(voice);
+    let mut input = BufferVec::new(2);
+    let mut output = BufferVec::new(2);
+    synth.process(64, &input.buffer_ref(), &mut output.buffer_mut());
+    assert_ne!(input.channel_f32(0), output.channel_f32(0));
+    assert_eq!(output.channel_f32(0).len(), 64)
 }

@@ -164,7 +164,7 @@ pub struct ModulationParameters {
 
 /// Complete DX7 patch
 #[derive(Debug, Clone, Copy)]
-pub struct Patch {
+pub struct Patch{
     /// Six operators (DX7 has 6 operators)
     pub(crate) op: [Operator; 6],
     /// Pitch envelope
