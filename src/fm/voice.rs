@@ -35,6 +35,7 @@ use super::patch::Patch;
 use crate::stmlib::dsp::semitones_to_ratio_safe;
 use crate::{MAX_BLOCK_SIZE, NUM_OPERATORS};
 use fundsp::prelude::*;
+use crate::fm::lfo::Lfo;
 
 /// Voice parameters for rendering
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -92,6 +93,7 @@ pub struct Voice {
     dirty: bool,
     pub temp_buffer: [f32; MAX_BUFFER_SIZE * 3],
     pub parameters: Parameters,
+    pub(crate) lfo: Lfo,
 }
 
 impl Voice {
@@ -116,6 +118,7 @@ impl Voice {
             dirty: true,
             temp_buffer: [0.0; MAX_BUFFER_SIZE * 3],
             parameters,
+            lfo: Lfo::new(),
         };
 
         let native_sr = 44100.0;
@@ -127,7 +130,9 @@ impl Voice {
         }
         ret.pitch_envelope.init(envelope_scale);
         ret.setup();
-
+        ret.lfo.init(sample_rate);
+        ret.lfo.set(&patch.modulations);
+        ret.lfo.reset();
         ret
     }
 
