@@ -24,7 +24,7 @@
 //! DX7 voice - main synthesis entry point
 
 use fundsp::audionode::AudioNode;
-use fundsp::{Frame, GenericSequence};
+use fundsp::{Frame, GenericSequence, MAX_BUFFER_SIZE};
 use fundsp::buffer::{BufferMut, BufferRef};
 use fundsp::numeric_array::generic_array::{GenericArray};
 use fundsp::prelude64::{U1, U2};
@@ -98,7 +98,7 @@ pub struct Voice {
     patch: Patch,
     dirty: bool,
     lfo: Lfo,
-    temp_buffer: GenericArray<f32, U1>,
+    pub temp_buffer: [f32; MAX_BUFFER_SIZE *3],
     parameters: Parameters
 }
 
@@ -122,7 +122,7 @@ impl Voice {
             feedback_state: [0.0, 0.0],
             patch,
             dirty: true,
-            temp_buffer: GenericArray::generate(|_| 0.0f32),
+            temp_buffer:[0.0; MAX_BUFFER_SIZE * 3],
             lfo: Default::default(),
             parameters: Parameters::default()
         };
@@ -349,14 +349,15 @@ impl AudioNode for Voice {
         self.parameters.note = input[0];
         self.parameters.gate = input[1] != -1.0;
         self.render_temp(&self.parameters.clone(), 1);
-        Frame::from(self.temp_buffer.clone())
+        let generic_array = GenericArray::generate(|_| self.temp_buffer[0]);
+        Frame::new(generic_array)
     }
     
     fn process(&mut self, size: usize, input: &BufferRef, output: &mut BufferMut) {
         self.parameters.gate = input.at_f32(1, 0) != -1.0;
-        self.parameters.note = input.at_f32(0, 1);
+        self.parameters.note = input.at_f32(0, 0);
 
-        self.render_temp(&self.parameters.clone(), size * 3);
+        self.render_temp(&self.parameters.clone(), size);
 
         let out_slice = output.channel_f32_mut(0);
         out_slice.copy_from_slice(&self.temp_buffer[..size]);

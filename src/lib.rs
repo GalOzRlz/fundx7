@@ -116,3 +116,100 @@ const NUM_OPERATORS: usize = 6;
 const NUM_ALGORITHMS: usize = 32;
 
 pub use fm::patch::{Patch, PatchBank};
+
+use fm::lfo::Lfo;
+use fm::voice::Parameters;
+use fm::voice::Voice;
+
+impl Patch {
+    /// midi_note is based on midi note 60.0 correlating to C4 at 260hz. midi_note of 69.0 corresponds to
+    /// A4 at 437hz.
+    pub fn generate_samples(
+        self,
+        midi_note: f32,
+        sample_rate: u32,
+        duration: std::time::Duration,
+    ) -> Vec<f32> {
+        const MAX_BLOCK_SIZE: usize = 64;
+        let n_samples = duration.as_millis() as usize * (sample_rate as usize / 1000) as usize;
+        let silence_threshold = 0.0001f32;
+        let silence_duration_samples = (sample_rate as usize * 100) / 1000; // 100ms
+
+        let mut voice = Voice::new(self.clone(), sample_rate as f32);
+        let mut lfo = Lfo::new();
+        lfo.init(sample_rate as f32);
+        lfo.set(&self.modulations);
+        lfo.reset();
+
+        let mut output = Vec::new();
+
+        // Phase 1: Render with gate on for the requested duration
+        let mut parameters = Parameters {
+            gate: true,
+            sustain: false,
+            velocity: 1.0,
+            note: midi_note,
+            ..Parameters::default()
+        };
+
+        let mut remaining = n_samples;
+        while remaining > 0 {
+            let block_size = remaining.min(MAX_BLOCK_SIZE);
+
+            // Step the LFO
+            lfo.step(block_size as f32);
+
+            // Apply LFO modulations to parameters
+            parameters.pitch_mod = lfo.pitch_mod();
+            parameters.amp_mod = lfo.amp_mod();
+
+            voice.render_temp(&parameters, block_size);
+            output.extend_from_slice(&voice.temp_buffer[..block_size]);
+            remaining -= block_size;
+        }
+
+        // Phase 2: Turn gate off and render until 100ms of silence
+        parameters.gate = false;
+        let mut consecutive_silent_samples = 0;
+
+        loop {
+            // Step the LFO
+            lfo.step(MAX_BLOCK_SIZE as f32);
+
+            // Apply LFO modulations to parameters
+            parameters.pitch_mod = lfo.pitch_mod();
+            parameters.amp_mod = lfo.amp_mod();
+
+            voice.render_temp(&parameters, MAX_BLOCK_SIZE);
+
+            // Check for silence in the rendered output
+            let rendered = &voice.temp_buffer[..MAX_BLOCK_SIZE];
+            for &sample in rendered {
+                if sample.abs() < silence_threshold {
+                    consecutive_silent_samples += 1;
+                } else {
+                    consecutive_silent_samples = 0;
+                }
+            }
+
+            output.extend_from_slice(rendered);
+
+            // Check if we've accumulated enough silence
+            if consecutive_silent_samples >= silence_duration_samples {
+                // Truncate to end after the silence duration
+                let truncate_to = output
+                    .len()
+                    .saturating_sub(consecutive_silent_samples - silence_duration_samples);
+                output.truncate(truncate_to);
+                return output;
+            }
+
+            // Safety limit: don't render more than 10 seconds total
+            if output.len() > sample_rate as usize * 10 {
+                break;
+            }
+        }
+
+        output
+    }
+}
