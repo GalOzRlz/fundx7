@@ -191,7 +191,7 @@ impl Voice {
             temp.as_mut_ptr(),
             temp[size..].as_mut_ptr(),
         ];
-        self.render_internal(parameters, &mut buffers, size);
+        self.render_internal(&mut buffers, size);
     }
 
     /// Renders audio with single temp buffer
@@ -206,12 +206,11 @@ impl Voice {
             unsafe { buffer.as_mut_ptr().add(2 * size) },
             unsafe { buffer.as_mut_ptr().add(2 * size) },
         ];
-        self.render_internal(&self.parameters.clone(), &mut buffers, size);
+        self.render_internal(&mut buffers, size);
     }
 
     fn render_internal(
         &mut self,
-        parameters: &Parameters,
         buffers: &mut [*mut f32; 4],
         size: usize,
     ) {
@@ -220,28 +219,28 @@ impl Voice {
         }
 
         let envelope_rate = size as f32;
-        let ad_scale = pow2_fast::<1>((0.5 - parameters.envelope_control) * 8.0);
-        let r_scale = pow2_fast::<1>(-(parameters.envelope_control - 0.3).abs() * 8.0);
+        let ad_scale = pow2_fast::<1>((0.5 - self.parameters.envelope_control) * 8.0);
+        let r_scale = pow2_fast::<1>(-(self.parameters.envelope_control - 0.3).abs() * 8.0);
         let gate_duration = 1.5 * self.sample_rate;
-        let envelope_sample = gate_duration * parameters.envelope_control;
+        let envelope_sample = gate_duration * self.parameters.envelope_control;
 
-        let input_note = parameters.note - 24.0 + self.patch.transpose as f32;
+        let input_note = self.parameters.note - 24.0 + self.patch.transpose as f32;
 
-        let pitch_envelope = if parameters.sustain {
+        let pitch_envelope = if self.parameters.sustain {
             self.pitch_envelope
                 .render_at_sample(envelope_sample, gate_duration)
         } else {
             self.pitch_envelope
-                .render_scaled(parameters.gate, envelope_rate, ad_scale, r_scale)
+                .render_scaled(self.parameters.gate, envelope_rate, ad_scale, r_scale)
         };
 
-        let pitch_mod = pitch_envelope + parameters.pitch_mod;
+        let pitch_mod = pitch_envelope + self.parameters.pitch_mod;
         let f0 = self.a0 * 0.25 * semitones_to_ratio_safe(input_note - 9.0 + pitch_mod * 12.0);
 
-        let note_on = parameters.gate && !self.gate;
-        self.gate = parameters.gate;
-        if note_on || parameters.sustain {
-            self.normalized_velocity = normalize_velocity(parameters.velocity);
+        let note_on = self.parameters.gate && !self.gate;
+        self.gate = self.parameters.gate;
+        if note_on || self.parameters.sustain {
+            self.normalized_velocity = normalize_velocity(self.parameters.velocity);
             self.note = input_note;
         }
 
@@ -264,11 +263,11 @@ impl Voice {
                 };
 
             let rate_scaling_val = rate_scaling(self.note, op.rate_scaling as i32);
-            let level = if parameters.sustain {
+            let level = if self.parameters.sustain {
                 self.operator_envelope[i].render_at_sample(envelope_sample, gate_duration)
             } else {
                 self.operator_envelope[i].render_scaled(
-                    parameters.gate,
+                    self.parameters.gate,
                     envelope_rate * rate_scaling_val,
                     ad_scale,
                     r_scale,
@@ -281,7 +280,7 @@ impl Voice {
                 .algorithms
                 .is_modulator(self.patch.algorithm as usize, i)
             {
-                (parameters.brightness - 0.5) * 32.0
+                (self.parameters.brightness - 0.5) * 32.0
             } else {
                 0.0
             };
@@ -298,7 +297,7 @@ impl Voice {
             }
             #[cfg(not(feature = "fast_op_level_modulation"))]
             {
-                let log_level_mod = sensitivity * parameters.amp_mod - 1.0;
+                let log_level_mod = sensitivity * self.parameters.amp_mod - 1.0;
                 let level_mod = 1.0 - pow2_fast::<2>(6.4 * log_level_mod);
                 a[i] = pow2_fast::<2>(-14.0 + level * level_mod);
             }
