@@ -104,7 +104,7 @@ pub struct Voice {
 
 impl Voice {
     /// Creates a new voice
-    pub fn new(patch: Patch, sample_rate: f32) -> Self {
+    pub fn new(patch: Patch, parameters: Parameters, sample_rate: f32) -> Self {
         let mut ret = Self {
             algorithms: Algorithms::new(),
             sample_rate,
@@ -124,7 +124,7 @@ impl Voice {
             dirty: true,
             temp_buffer:[0.0; MAX_BUFFER_SIZE * 3],
             lfo: Default::default(),
-            parameters: Parameters::default()
+            parameters,
         };
 
         let native_sr = 44100.0;
@@ -173,7 +173,6 @@ impl Voice {
     /// Renders audio with 2 output buffers (out and aux)
     pub fn render_stereo(
         &mut self,
-        parameters: &Parameters,
         temp: &mut [f32],
         out: &mut [f32],
         aux: &mut [f32],
@@ -189,7 +188,7 @@ impl Voice {
     }
 
     /// Renders audio with single temp buffer
-    pub fn render_temp(&mut self, parameters: &Parameters, size: usize) {
+    pub fn render_temp(&mut self, size: usize) {
         let buffer = &mut self.temp_buffer[..size * 3];
         let mut buffers = [
             buffer.as_mut_ptr(),
@@ -325,7 +324,7 @@ impl Voice {
 
 impl Default for Voice {
     fn default() -> Self {
-        Self::new(Patch::default(), 44100.0)
+        Self::new(Patch::default(), Parameters::default(), 44100.0)
     }
 }
 
@@ -347,7 +346,7 @@ impl AudioNode for Voice {
     fn tick(&mut self, input: &Frame<f32, U2>) -> Frame<f32, U1> {
         self.parameters.note = input[0];
         self.parameters.gate = input[1] != -1.0;
-        self.render_temp(&self.parameters.clone(), 1);
+        self.render_temp(1);
         let generic_array = GenericArray::generate(|_| self.temp_buffer[0]);
         Frame::new(generic_array)
     }
@@ -358,7 +357,7 @@ impl AudioNode for Voice {
         self.lfo.step(MAX_BUFFER_SIZE as f32);
         self.parameters.pitch_mod = self.lfo.pitch_mod();
         self.parameters.amp_mod = self.lfo.amp_mod();
-        self.render_temp(&self.parameters.clone(), size);
+        self.render_temp(size);
 
         let out_slice = output.channel_f32_mut(0);
         out_slice.copy_from_slice(&self.temp_buffer[..size]);

@@ -7,7 +7,7 @@ mod common;
 
 use common::generate_wav;
 use fundx7::*;
-use fundx7::fm::voice::Voice;
+use fundx7::fm::voice::{Parameters, Voice};
 
 #[test]
 fn smoke_test() {
@@ -44,7 +44,7 @@ fn dsp_test() {
 
     let patch_bank = PatchBank::new(&patch_bank_bytes);
     let patch = patch_bank.patches[4];
-    let voice = Voice::new(patch, SAMPLE_RATE);
+    let voice = Voice::new(patch, Parameters::default(), SAMPLE_RATE);
     //                                 midi note 40 | gate on
     let mut synth = (dc(40.0) |  dc(1.0) ) >> An(voice);
     let mut input = BufferVec::new(2);

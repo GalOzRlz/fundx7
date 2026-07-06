@@ -136,22 +136,22 @@ impl Patch {
         let silence_threshold = 0.0001f32;
         let silence_duration_samples = (sample_rate as usize * 100) / 1000; // 100ms
 
-        let mut voice = Voice::new(self.clone(), sample_rate as f32);
-        let mut lfo = Lfo::new();
-        lfo.init(sample_rate as f32);
-        lfo.set(&self.modulations);
-        lfo.reset();
-
-        let mut output = Vec::new();
-
         // Phase 1: Render with gate on for the requested duration
-        let mut parameters = Parameters {
+        let parameters = Parameters {
             gate: true,
             sustain: false,
             velocity: 1.0,
             note: midi_note,
             ..Parameters::default()
         };
+
+        let mut voice = Voice::new(self.clone(), parameters, sample_rate as f32);
+        let mut lfo = Lfo::new();
+        lfo.init(sample_rate as f32);
+        lfo.set(&self.modulations);
+        lfo.reset();
+
+        let mut output = Vec::new();
 
         let mut remaining = n_samples;
         while remaining > 0 {
@@ -164,13 +164,13 @@ impl Patch {
             voice.parameters.pitch_mod = lfo.pitch_mod();
             voice.parameters.amp_mod = lfo.amp_mod();
 
-            voice.render_temp(&parameters, block_size);
+            voice.render_temp(block_size);
             output.extend_from_slice(&voice.temp_buffer[..block_size]);
             remaining -= block_size;
         }
 
         // Phase 2: Turn gate off and render until 100ms of silence
-        parameters.gate = false;
+        voice.parameters.gate = false;
         let mut consecutive_silent_samples = 0;
 
         loop {
@@ -181,7 +181,7 @@ impl Patch {
             voice.parameters.pitch_mod = lfo.pitch_mod();
             voice.parameters.amp_mod = lfo.amp_mod();
 
-            voice.render_temp(&parameters, MAX_BLOCK_SIZE);
+            voice.render_temp(MAX_BLOCK_SIZE);
 
             // Check for silence in the rendered output
             let rendered = &voice.temp_buffer[..MAX_BLOCK_SIZE];

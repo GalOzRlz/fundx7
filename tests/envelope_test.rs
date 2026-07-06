@@ -21,9 +21,6 @@ fn test_envelope_triggering() {
     patch.algorithm = 31; // Simple algorithm with one carrier
 
     let sample_rate = 44100;
-    let mut voice = Voice::new(patch, sample_rate as f32);
-
-    // Render with gate OFF first (should be silent)
     let params_off = Parameters {
         gate: false,
         sustain: false,
@@ -31,19 +28,20 @@ fn test_envelope_triggering() {
         note: 69.0,
         ..Parameters::default()
     };
-    voice.render_temp(&params_off, 64);
+    let mut voice = Voice::new(patch, params_off, sample_rate as f32);
+    voice.render_temp( 64);
     let max_off = voice.temp_buffer.iter().take(64).map(|x| x.abs()).fold(0.0f32, f32::max);
     println!("Max amplitude with gate OFF: {}", max_off);
 
     // Render with gate ON (should trigger envelope)
-    let params_on = Parameters {
-        gate: true,
-        sustain: false,
-        velocity: 1.0,
-        note: 69.0,
-        ..Parameters::default()
-    };
-    voice.render_temp(&params_on, 64);
+    voice.parameters = Parameters {
+            gate: true,
+            sustain: false,
+            velocity: 1.0,
+            note: 69.0,
+            ..Parameters::default()
+        };
+    voice.render_temp(64);
     let max_on = voice.temp_buffer.iter().take(64).map(|x| x.abs()).fold(0.0f32, f32::max);
     println!("Max amplitude with gate ON: {}", max_on);
 
