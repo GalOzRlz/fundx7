@@ -132,7 +132,7 @@ impl Patch {
         duration: std::time::Duration,
     ) -> Vec<f32> {
         const MAX_BLOCK_SIZE: usize = 24;
-        let n_samples = duration.as_millis() as usize * (sample_rate as usize / 1000) as usize;
+        let n_samples = duration.as_millis() as usize * (sample_rate as usize / 1000);
         let silence_threshold = 0.0001f32;
         let silence_duration_samples = (sample_rate as usize * 100) / 1000; // 100ms
 

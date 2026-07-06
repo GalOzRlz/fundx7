@@ -39,7 +39,7 @@ use super::operator::Operator;
 use super::patch::Patch;
 
 use crate::stmlib::dsp::semitones_to_ratio_safe;
-use crate::{MAX_BLOCK_SIZE, NUM_OPERATORS, SAMPLE_RATE};
+use crate::{NUM_OPERATORS};
 
 /// Voice parameters for rendering
 #[derive(Clone, Copy, Debug)]
@@ -203,6 +203,7 @@ impl Voice {
 
     /// Renders audio with single temp buffer
     pub fn render_temp(&mut self, size: usize) {
+        assert!(size <=  MAX_BUFFER_SIZE);
         let buffer = &mut self.temp_buffer[..size * 3];
         let mut buffers = [
             buffer.as_mut_ptr(),
@@ -222,8 +223,6 @@ impl Voice {
             return;
         }
         self.step_lfo(size as f32);
-        println!("phase: {}, value: {}, pitch_mod: {}, amp_mod: {}",
-                 self.lfo.phase, self.lfo.value, self.parameters.pitch_mod, self.parameters.amp_mod);
         let envelope_rate = size as f32;
         let ad_scale = pow2_fast::<1>((0.5 - self.parameters.envelope_control) * 8.0);
         let r_scale = pow2_fast::<1>(-(self.parameters.envelope_control - 0.3).abs() * 8.0);
