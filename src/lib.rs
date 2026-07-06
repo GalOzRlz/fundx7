@@ -107,7 +107,7 @@ mod stmlib;
 pub const SAMPLE_RATE: f32 = 48000.0;
 
 /// Maximum block size for audio processing
-pub const MAX_BLOCK_SIZE: usize = 64;
+pub const MAX_BLOCK_SIZE: usize = MAX_BUFFER_SIZE;
 
 /// Number of operators for DX7
 const NUM_OPERATORS: usize = 6;
@@ -115,6 +115,7 @@ const NUM_OPERATORS: usize = 6;
 /// Number of algorithms for DX7;
 const NUM_ALGORITHMS: usize = 32;
 
+use fundsp::MAX_BUFFER_SIZE;
 pub use fm::patch::{Patch, PatchBank};
 
 use fm::lfo::Lfo;
@@ -160,8 +161,8 @@ impl Patch {
             lfo.step(block_size as f32);
 
             // Apply LFO modulations to parameters
-            parameters.pitch_mod = lfo.pitch_mod();
-            parameters.amp_mod = lfo.amp_mod();
+            voice.parameters.pitch_mod = lfo.pitch_mod();
+            voice.parameters.amp_mod = lfo.amp_mod();
 
             voice.render_temp(&parameters, block_size);
             output.extend_from_slice(&voice.temp_buffer[..block_size]);
@@ -177,8 +178,8 @@ impl Patch {
             lfo.step(MAX_BLOCK_SIZE as f32);
 
             // Apply LFO modulations to parameters
-            parameters.pitch_mod = lfo.pitch_mod();
-            parameters.amp_mod = lfo.amp_mod();
+            voice.parameters.pitch_mod = lfo.pitch_mod();
+            voice.parameters.amp_mod = lfo.amp_mod();
 
             voice.render_temp(&parameters, MAX_BLOCK_SIZE);
 
