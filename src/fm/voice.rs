@@ -123,7 +123,7 @@ impl Voice {
             patch,
             dirty: true,
             temp_buffer:[0.0; MAX_BUFFER_SIZE * 3],
-            lfo: Default::default(),
+            lfo: Lfo::new(),
             parameters,
         };
 
@@ -218,6 +218,8 @@ impl Voice {
             return;
         }
         self.step_lfo(size as f32);
+        println!("LFO pitch_mod: {}, LFO amp_mod: {}", self.lfo.pitch_mod(), self.lfo.amp_mod());
+
         let envelope_rate = size as f32;
         let ad_scale = pow2_fast::<1>((0.5 - self.parameters.envelope_control) * 8.0);
         let r_scale = pow2_fast::<1>(-(self.parameters.envelope_control - 0.3).abs() * 8.0);
