@@ -31,8 +31,8 @@ fn test_envelope_triggering() {
         note: 69.0,
         ..Parameters::default()
     };
-    voice.render_temp(&params_off, 100);
-    let max_off = voice.temp_buffer.iter().take(100).map(|x| x.abs()).fold(0.0f32, f32::max);
+    voice.render_temp(&params_off, 64);
+    let max_off = voice.temp_buffer.iter().take(64).map(|x| x.abs()).fold(0.0f32, f32::max);
     println!("Max amplitude with gate OFF: {}", max_off);
 
     // Render with gate ON (should trigger envelope)
@@ -43,8 +43,8 @@ fn test_envelope_triggering() {
         note: 69.0,
         ..Parameters::default()
     };
-    voice.render_temp(&params_on, 100);
-    let max_on = voice.temp_buffer.iter().take(100).map(|x| x.abs()).fold(0.0f32, f32::max);
+    voice.render_temp(&params_on, 64);
+    let max_on = voice.temp_buffer.iter().take(64).map(|x| x.abs()).fold(0.0f32, f32::max);
     println!("Max amplitude with gate ON: {}", max_on);
 
     // Check envelope level directly
