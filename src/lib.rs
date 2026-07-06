@@ -21,11 +21,11 @@
 //
 // See http://creativecommons.org/licenses/MIT/ for more information.
 
-//! (mostly) Idiomatic Rust port of Mutable Instruments Plaits DX7/FM synthesis engine.
+//! (mostly) Idiomatic Rust port of Mutable Instruments Plaits fundx7/FM synthesis engine.
 //!
 //! This crate provides a port of the FM synthesis components from the
 //! Mutable Instruments Plaits Eurorack module, focusing specifically on
-//! the DX7-style FM synthesis engine.
+//! the fundx7-style FM synthesis engine.
 //!
 //! # Examples
 //!
@@ -36,7 +36,7 @@
 //! // for WAV functionality
 //! use hound::{WavSpec, WavWriter};
 //!
-//! use dx7::{PatchBank, Patch};
+//! use fundx7::{PatchBank, Patch};
 //!
 //! fn generate_wav(patch: Patch, midi_note: f32, sample_rate: u32, duration: Duration) -> Vec<u8> {
 //!     let buf = patch.generate_samples(midi_note, sample_rate, duration);
@@ -109,10 +109,10 @@ pub const SAMPLE_RATE: f32 = 48000.0;
 /// Maximum block size for audio processing
 pub const MAX_BLOCK_SIZE: usize = 24;
 
-/// Number of operators for DX7
+/// Number of operators for fundx7
 const NUM_OPERATORS: usize = 6;
 
-/// Number of algorithms for DX7;
+/// Number of algorithms for fundx7;
 const NUM_ALGORITHMS: usize = 32;
 
 pub use fm::patch::{Patch, PatchBank};

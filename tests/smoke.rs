@@ -5,7 +5,7 @@ use hound::{WavSpec, WavWriter};
 mod common;
 
 use common::generate_wav;
-use dx7::PatchBank;
+use fundx7::PatchBank;
 
 #[test]
 fn smoke_test() {

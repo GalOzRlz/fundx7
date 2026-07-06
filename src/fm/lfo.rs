@@ -21,7 +21,7 @@
 //
 // See http://creativecommons.org/licenses/MIT/ for more information.
 
-//! DX7-compatible LFO
+//! fundx7-compatible LFO
 
 use crate::fm::dx_units::{lfo_delay, lfo_frequency, pitch_mod_sensitivity};
 use crate::fm::patch::ModulationParameters;
@@ -58,7 +58,7 @@ impl From<u8> for Waveform {
     }
 }
 
-/// DX7-style LFO
+/// fundx7-style LFO
 pub struct Lfo {
     phase: f32,
     frequency: f32,

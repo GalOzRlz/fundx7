@@ -21,7 +21,7 @@
 //
 // See http://creativecommons.org/licenses/MIT/ for more information.
 
-//! DX7 patch data structures
+//! fundx7 patch data structures
 
 /// Size of SysEx patch data
 pub const SYX_SIZE: usize = 128;
@@ -34,7 +34,7 @@ const HEADER_BANK: [u8; 6] = [0xF0, 0x43, 0x00, 0x09, 0x20, 0x00];
 /// DX6 voice bank (32 voices = 32 * 128 bytes packed + 2 bytes checksum)
 pub const BULK_FULL_SYSEX_SIZE: usize = 4104;
 
-/// A bank of 32 dx7 patches parsed from sysex.
+/// A bank of 32 fundx7 patches parsed from sysex.
 #[derive(Debug, Clone)]
 pub struct PatchBank {
     /// The array of 32 patches.
@@ -67,7 +67,7 @@ impl PatchBank {
     }
 }
 
-/// DX7 envelope parameters (4-stage)
+/// fundx7 envelope parameters (4-stage)
 #[derive(Debug, Clone, Copy)]
 pub struct OpEnvelope {
     /// Rate for each of the 4 envelope stages
@@ -85,7 +85,7 @@ impl Default for OpEnvelope {
     }
 }
 
-/// DX7 envelope parameters (4-stage)
+/// fundx7 envelope parameters (4-stage)
 #[derive(Debug, Clone, Copy)]
 pub struct PitchEnvelope {
     /// Rate for each of the 4 envelope stages
@@ -118,7 +118,7 @@ pub struct KeyboardScaling {
     pub right_curve: u8,
 }
 
-/// DX7 operator parameters
+/// fundx7 operator parameters
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Operator {
     /// Amplitude envelope
@@ -162,10 +162,10 @@ pub struct ModulationParameters {
     pub pitch_mod_sensitivity: u8,
 }
 
-/// Complete DX7 patch
+/// Complete fundx7 patch
 #[derive(Debug, Clone, Copy)]
 pub struct Patch {
-    /// Six operators (DX7 has 6 operators)
+    /// Six operators (fundx7 has 6 operators)
     pub(crate) op: [Operator; 6],
     /// Pitch envelope
     pub pitch_envelope: PitchEnvelope,
@@ -207,7 +207,7 @@ impl Patch {
         format!("{}", self.name.iter().collect::<String>().trim())
     }
 
-    /// Set the 1-offset operator number corresponding to DX7 patches. Internally this is mapped to
+    /// Set the 1-offset operator number corresponding to fundx7 patches. Internally this is mapped to
     /// a 0-offset reverse ordered sequence.
     pub fn set_op(&mut self, idx: usize, operator: Operator) {
         assert!(
@@ -233,7 +233,7 @@ impl Patch {
         ret
     }
 
-    /// Unpacks a DX7 SysEx patch from raw bytes
+    /// Unpacks a fundx7 SysEx patch from raw bytes
     fn unpack(&mut self, data: &[u8]) {
         assert_eq!(
             data.len(),

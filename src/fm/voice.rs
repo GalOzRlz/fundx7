@@ -21,7 +21,7 @@
 //
 // See http://creativecommons.org/licenses/MIT/ for more information.
 
-//! DX7 voice - main synthesis entry point
+//! fundx7 voice - main synthesis entry point
 
 use super::algorithms::Algorithms;
 use super::dx_units::{
@@ -73,7 +73,7 @@ impl Default for Parameters {
     }
 }
 
-/// DX7 FM voice
+/// fundx7 FM voice
 pub struct Voice {
     algorithms: Algorithms,
     sample_rate: f32,

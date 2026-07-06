@@ -214,7 +214,7 @@ struct RendererSpecs {
     render_fn: RenderFn,
 }
 
-// 6-operator opcodes (DX7)
+// 6-operator opcodes (fundx7)
 #[rustfmt::skip]
 static OPCODES_6: [[u8; 6]; 32] = [
     [ FB | out_flags(1), mod_flags(1) | out_flags(1), mod_flags(1) | out_flags(1), mod_flags(1) | OUTPUT, NO_MOD | out_flags(1), mod_flags(1) | add_flags(0) ],

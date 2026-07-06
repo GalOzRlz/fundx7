@@ -21,7 +21,7 @@
 //
 // See http://creativecommons.org/licenses/MIT/ for more information.
 
-//! Various "magic" conversion functions for DX7 patch data
+//! Various "magic" conversion functions for fundx7 patch data
 
 use crate::stmlib::dsp::{interpolate, semitones_to_ratio_safe};
 use super::patch::{KeyboardScaling, Operator};

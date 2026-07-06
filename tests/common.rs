@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use hound::{WavSpec, WavWriter};
 
-use dx7::Patch;
+use fundx7::Patch;
 
 /// midi_note is based on midi note 60.0 correlating to C4 at 260hz. midi_note of 69.0 corresponds to
 /// A4 at 437hz.

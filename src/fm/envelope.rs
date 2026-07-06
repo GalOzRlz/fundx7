@@ -23,7 +23,7 @@
 
 //! Multi-segment envelope generator
 //!
-//! Implements DX7-style envelopes with quirks like:
+//! Implements fundx7-style envelopes with quirks like:
 //! - Vaguely logarithmic shape for ascending segments
 //! - Direct jump above a threshold for ascending segments
 //! - Specific logic and rates for plateaus
@@ -209,7 +209,7 @@ impl<const NUM_STAGES: usize, const RESHAPE_ASCENDING: bool> Default
     }
 }
 
-/// Operator envelope with DX7-specific quirks (4 stages, reshaped ascending)
+/// Operator envelope with fundx7-specific quirks (4 stages, reshaped ascending)
 #[derive(Copy, Clone)]
 pub struct OperatorEnvelope {
     envelope: Envelope<4, true>,
@@ -228,7 +228,7 @@ impl OperatorEnvelope {
         self.envelope.init(scale);
     }
 
-    /// Configures the envelope from DX7 patch data
+    /// Configures the envelope from fundx7 patch data
     pub fn set(&mut self, rate: &[u8; 4], level: &[u8; 4], global_level: u8) {
         // Configure levels
         for i in 0..4 {
@@ -238,7 +238,7 @@ impl OperatorEnvelope {
                 0.125 * if level_scaled < 1 { 0.5 } else { level_scaled as f32 };
         }
 
-        // Configure increments with DX7 quirks
+        // Configure increments with fundx7 quirks
         for i in 0..4 {
             let mut increment = operator_envelope_increment(rate[i] as i32);
             let from = self.envelope.level[(i + 4 - 1) % 4];
@@ -315,7 +315,7 @@ impl PitchEnvelope {
         self.envelope.init(scale);
     }
 
-    /// Configures the envelope from DX7 patch data
+    /// Configures the envelope from fundx7 patch data
     pub fn set(&mut self, rate: &[u8; 4], level: &[u8; 4]) {
         // Configure levels
         for i in 0..4 {

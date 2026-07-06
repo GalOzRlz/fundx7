@@ -1,6 +1,6 @@
-# dx7
+# fundx7
 
-Pure Rust DX7 emulator.
+Pure Rust fundx7 emulator.
 
 ```rust
 use std::time::Duration;
@@ -9,7 +9,7 @@ use std::io::Write;
 // for WAV functionality
 use hound::{WavSpec, WavWriter};
 
-use dx7::{PatchBank, Patch};
+use fundx7::{PatchBank, Patch};
 
 fn generate_wav(patch: Patch, midi_note: f32, sample_rate: u32, duration: Duration) -> Vec<u8> {
     let buf = patch.generate_samples(midi_note, sample_rate, duration);

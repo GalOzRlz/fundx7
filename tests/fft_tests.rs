@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use rustfft::{num_complex::Complex, FftPlanner};
 
-use dx7::fm::patch::{OpEnvelope, Operator, Patch};
+use fundx7::fm::patch::{OpEnvelope, Operator, Patch};
 
 mod common;
 use common::generate_wav;
