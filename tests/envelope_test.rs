@@ -1,5 +1,5 @@
-use dx7::fm::patch::{OpEnvelope, Operator, Patch};
-use dx7::fm::voice::{Parameters, Voice};
+use fundx7::fm::patch::{OpEnvelope, Operator, Patch};
+use fundx7::fm::voice::{Parameters, Voice};
 
 #[test]
 fn test_envelope_triggering() {

@@ -6,8 +6,8 @@ use hound::{WavSpec, WavWriter};
 mod common;
 
 use common::generate_wav;
-use dx7::fm::voice::Voice;
-use dx7::{PatchBank, SAMPLE_RATE};
+use fundx7::*;
+use fundx7::fm::voice::Voice;
 
 #[test]
 fn smoke_test() {
