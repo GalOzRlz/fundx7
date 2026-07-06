@@ -141,6 +141,10 @@ impl Voice {
         ret.pitch_envelope.init(envelope_scale);
         ret.setup();
 
+        println!("delay_inc: {:?}", ret.lfo.delay_increment);
+        println!("pitch_mod_depth: {}, amp_mod_depth: {}", ret.lfo.pitch_mod_depth, ret.lfo.amp_mod_depth);
+        println!("frequency: {}", ret.lfo.frequency);
+
         ret
     }
     
@@ -218,8 +222,8 @@ impl Voice {
             return;
         }
         self.step_lfo(size as f32);
-        println!("LFO pitch_mod: {}, LFO amp_mod: {}", self.lfo.pitch_mod(), self.lfo.amp_mod());
-
+        println!("phase: {}, value: {}, pitch_mod: {}, amp_mod: {}",
+                 self.lfo.phase, self.lfo.value, self.parameters.pitch_mod, self.parameters.amp_mod);
         let envelope_rate = size as f32;
         let ad_scale = pow2_fast::<1>((0.5 - self.parameters.envelope_control) * 8.0);
         let r_scale = pow2_fast::<1>(-(self.parameters.envelope_control - 0.3).abs() * 8.0);
@@ -294,7 +298,7 @@ impl Voice {
             let sensitivity = amp_mod_sensitivity(op.amp_mod_sensitivity as i32);
             #[cfg(feature = "fast_op_level_modulation")]
             {
-                let level_mod = 1.0 - sensitivity * parameters.amp_mod;
+                let level_mod = 1.0 - sensitivity * self.parameters.amp_mod;
                 a[i] = pow2_fast::<2>(-14.0 + level) * level_mod;
             }
             #[cfg(not(feature = "fast_op_level_modulation"))]
@@ -350,9 +354,6 @@ impl AudioNode for Voice {
         self.lfo.init(self.sample_rate);
         self.lfo.set(&self.patch.modulations);
         self.lfo.reset();
-        self.lfo.step(1.0);
-        self.parameters.pitch_mod = self.lfo.pitch_mod();
-        self.parameters.amp_mod = self.lfo.amp_mod();
     }
 
     fn tick(&mut self, input: &Frame<f32, U2>) -> Frame<f32, U1> {

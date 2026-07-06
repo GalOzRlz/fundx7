@@ -61,15 +61,15 @@ impl From<u8> for Waveform {
 /// DX7-style LFO
 #[derive(Clone, Copy, Debug)]
 pub struct Lfo {
-    phase: f32,
-    frequency: f32,
+    pub(crate) phase: f32,
+    pub(crate) frequency: f32,
     delay_phase: f32,
-    delay_increment: [f32; 2],
-    value: f32,
+    pub(crate) delay_increment: [f32; 2],
+    pub(crate) value: f32,
     random_value: f32,
     one_hz: f32,
-    amp_mod_depth: f32,
-    pitch_mod_depth: f32,
+    pub(crate) amp_mod_depth: f32,
+    pub(crate) pitch_mod_depth: f32,
     waveform: Waveform,
     reset_phase: bool,
     phase_integral: i32,

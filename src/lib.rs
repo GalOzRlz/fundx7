@@ -144,7 +144,7 @@ impl Patch {
             note: midi_note,
             ..Parameters::default()
         };
-
+        println!("modulations: {:?}", self.modulations);
         let mut voice = Voice::new(self.clone(), parameters, sample_rate as f32);
         let mut output = Vec::new();
 

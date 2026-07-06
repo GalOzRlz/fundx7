@@ -5,6 +5,7 @@ use rustfft::{num_complex::Complex, FftPlanner};
 use fundx7::fm::patch::{OpEnvelope, Operator, Patch};
 
 mod common;
+use common::generate_wav;
 
 /// Helper to create a simple operator with specified ratio and envelope
 fn create_operator(ratio_coarse: u8, ratio_fine: u8, output_level: u8) -> Operator {
