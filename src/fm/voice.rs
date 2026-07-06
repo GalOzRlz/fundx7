@@ -98,7 +98,7 @@ pub struct Voice {
     patch: Patch,
     dirty: bool,
     lfo: Lfo,
-    temp_buffer_tick: GenericArray<f32, U1>,
+    temp_buffer: GenericArray<f32, U1>,
     parameters: Parameters
 }
 
@@ -122,7 +122,7 @@ impl Voice {
             feedback_state: [0.0, 0.0],
             patch,
             dirty: true,
-            temp_buffer_tick: GenericArray::generate(|_| 0.0f32),
+            temp_buffer: GenericArray::generate(|_| 0.0f32),
             lfo: Default::default(),
             parameters: Parameters::default()
         };
@@ -189,13 +189,13 @@ impl Voice {
     }
 
     /// Renders audio with single temp buffer
-    pub fn render_temp(&mut self, parameters: &Parameters, temp: &mut [f32]) {
-        let size = temp.len() / 3;
+    pub fn render_temp(&mut self, parameters: &Parameters, size: usize) {
+        let buffer = &mut self.temp_buffer[..size * 3];
         let mut buffers = [
-            temp.as_mut_ptr(),
-            unsafe { temp.as_mut_ptr().add(size) },
-            unsafe { temp.as_mut_ptr().add(2 * size) },
-            unsafe { temp.as_mut_ptr().add(2 * size) },
+            buffer.as_mut_ptr(),
+            unsafe { buffer.as_mut_ptr().add(size) },
+            unsafe { buffer.as_mut_ptr().add(2 * size) },
+            unsafe { buffer.as_mut_ptr().add(2 * size) },
         ];
         self.render_internal(parameters, &mut buffers, size);
     }
@@ -345,19 +345,21 @@ impl AudioNode for Voice {
         self.parameters.amp_mod = self.lfo.amp_mod();
     }
 
-    fn tick(&mut self, input: &Frame<f32, Self::Inputs>) -> Frame<f32, Self::Outputs> {
-        let gate = input[1] != -1.0;
-        self.parameters.gate = gate;
+    fn tick(&mut self, input: &Frame<f32, U2>) -> Frame<f32, U1> {
         self.parameters.note = input[0];
-        let mut frame = [0.0f32];
-        self.render_temp(&self.parameters.clone(), &mut frame);
-        self.temp_buffer_tick[0] = frame[0];
-        Frame::from(self.temp_buffer_tick.clone())
+        self.parameters.gate = input[1] != -1.0;
+        self.render_temp(&self.parameters.clone(), 1);
+        Frame::from(self.temp_buffer.clone())
     }
+    
     fn process(&mut self, size: usize, input: &BufferRef, output: &mut BufferMut) {
         self.parameters.gate = input.at_f32(1, 0) != -1.0;
         self.parameters.note = input.at_f32(0, 1);
-        self.render_temp(&self.parameters.clone(), output.channel_f32_mut(0));
+
+        self.render_temp(&self.parameters.clone(), size * 3);
+
+        let out_slice = output.channel_f32_mut(0);
+        out_slice.copy_from_slice(&self.temp_buffer[..size]);
     }
 }
 
