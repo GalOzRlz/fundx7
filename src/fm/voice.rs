@@ -335,6 +335,9 @@ impl Voice {
     }
 }
 
+/// A DX7 synth based on Sysex configuration files.
+/// Input 0: incoming midi note value (doesn't support bending or micro-tuning for now)
+/// Input 1: Gate signal
 impl Default for Voice {
     fn default() -> Self {
         Self::new(Patch::default(), Parameters::default(), 44100.0)
