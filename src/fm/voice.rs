@@ -203,7 +203,8 @@ impl Voice {
 
     /// Renders audio with single temp buffer
     pub fn render_temp(&mut self, size: usize) {
-        assert!(size <=  MAX_BUFFER_SIZE);
+        assert!(size <= MAX_BUFFER_SIZE);
+        self.temp_buffer.fill(0.0);
         let buffer = &mut self.temp_buffer[..size * 3];
         let mut buffers = [
             buffer.as_mut_ptr(),
