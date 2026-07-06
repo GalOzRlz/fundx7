@@ -91,7 +91,9 @@ pub struct Voice {
     feedback_state: [f32; 2],
     patch: Patch,
     dirty: bool,
+    /// internal audio buffer for each render call
     pub temp_buffer: [f32; MAX_BUFFER_SIZE * 3],
+    /// voice parameters
     pub parameters: Parameters,
     pub(crate) lfo: Lfo,
 }
