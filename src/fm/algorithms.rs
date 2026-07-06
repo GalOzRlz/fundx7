@@ -55,6 +55,7 @@ const OUTPUT: u8 = add_flags(0);
 
 /// Store information about all FM algorithms, and which functions to call
 /// to render them.
+#[derive(Debug, Clone, Copy)]
 pub struct Algorithms {
     render_calls: [[RenderCall; NUM_OPERATORS]; NUM_ALGORITHMS],
 }
