@@ -127,6 +127,10 @@ impl Voice {
             parameters,
         };
 
+        ret.lfo.init(sample_rate);
+        ret.lfo.set(&patch.modulations);
+        ret.lfo.reset();
+
         let native_sr = 44100.0;
         let envelope_scale = native_sr * ret.one_hz;
 
@@ -138,6 +142,12 @@ impl Voice {
         ret.setup();
 
         ret
+    }
+    
+    pub(crate) fn step_lfo(&mut self, samples: f32){
+        self.lfo.step(samples);
+        self.parameters.pitch_mod = self.lfo.pitch_mod();
+        self.parameters.amp_mod = self.lfo.amp_mod();
     }
 
     /// Pre-computes patch-dependent data
@@ -207,7 +217,7 @@ impl Voice {
         if self.setup() {
             return;
         }
-
+        self.step_lfo(size as f32);
         let envelope_rate = size as f32;
         let ad_scale = pow2_fast::<1>((0.5 - self.parameters.envelope_control) * 8.0);
         let r_scale = pow2_fast::<1>(-(self.parameters.envelope_control - 0.3).abs() * 8.0);
@@ -338,7 +348,7 @@ impl AudioNode for Voice {
         self.lfo.init(self.sample_rate);
         self.lfo.set(&self.patch.modulations);
         self.lfo.reset();
-        self.lfo.step(MAX_BUFFER_SIZE as f32);
+        self.lfo.step(1.0);
         self.parameters.pitch_mod = self.lfo.pitch_mod();
         self.parameters.amp_mod = self.lfo.amp_mod();
     }
@@ -354,9 +364,6 @@ impl AudioNode for Voice {
     fn process(&mut self, size: usize, input: &BufferRef, output: &mut BufferMut) {
         self.parameters.gate = input.at_f32(1, 0) != -1.0;
         self.parameters.note = input.at_f32(0, 0);
-        self.lfo.step(MAX_BUFFER_SIZE as f32);
-        self.parameters.pitch_mod = self.lfo.pitch_mod();
-        self.parameters.amp_mod = self.lfo.amp_mod();
         self.render_temp(size);
 
         let out_slice = output.channel_f32_mut(0);
