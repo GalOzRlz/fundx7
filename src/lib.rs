@@ -163,9 +163,8 @@ impl Patch {
             parameters.pitch_mod = lfo.pitch_mod();
             parameters.amp_mod = lfo.amp_mod();
 
-            let mut buf = vec![0.0_f32; block_size * 3]; // render_temp needs 3x size
-            voice.render_temp(&parameters, &mut buf);
-            output.extend_from_slice(&buf[..block_size]);
+            voice.render_temp(&parameters, block_size);
+            output.extend_from_slice(&voice.temp_buffer[..block_size]);
             remaining -= block_size;
         }
 
@@ -181,11 +180,10 @@ impl Patch {
             parameters.pitch_mod = lfo.pitch_mod();
             parameters.amp_mod = lfo.amp_mod();
 
-            let mut chunk = vec![0.0_f32; MAX_BLOCK_SIZE * 3];
-            voice.render_temp(&parameters, &mut chunk);
+            voice.render_temp(&parameters, MAX_BLOCK_SIZE);
 
             // Check for silence in the rendered output
-            let rendered = &chunk[..MAX_BLOCK_SIZE];
+            let rendered = &voice.temp_buffer[..MAX_BLOCK_SIZE];
             for &sample in rendered {
                 if sample.abs() < silence_threshold {
                     consecutive_silent_samples += 1;

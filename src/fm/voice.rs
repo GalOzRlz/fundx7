@@ -33,7 +33,8 @@ use super::operator::Operator;
 use super::patch::Patch;
 
 use crate::stmlib::dsp::semitones_to_ratio_safe;
-use crate::NUM_OPERATORS;
+use crate::{MAX_BLOCK_SIZE, NUM_OPERATORS};
+use fundsp::prelude::*;
 
 /// Voice parameters for rendering
 pub struct Parameters {
@@ -88,6 +89,7 @@ pub struct Voice {
     feedback_state: [f32; 2],
     patch: Patch,
     dirty: bool,
+    pub temp_buffer: [f32; MAX_BUFFER_SIZE * 3],
 }
 
 impl Voice {
@@ -110,6 +112,7 @@ impl Voice {
             feedback_state: [0.0, 0.0],
             patch,
             dirty: true,
+            temp_buffer: [0.0; MAX_BUFFER_SIZE * 3],
         };
 
         let native_sr = 44100.0;
@@ -174,13 +177,15 @@ impl Voice {
     }
 
     /// Renders audio with single temp buffer
-    pub fn render_temp(&mut self, parameters: &Parameters, temp: &mut [f32]) {
-        let size = temp.len() / 3;
+    pub fn render_temp(&mut self, parameters: &Parameters, size: usize) {
+    assert!(size <= MAX_BUFFER_SIZE);
+        self.temp_buffer.fill(0.0);
+        let buffer = &mut self.temp_buffer[..size * 3];
         let mut buffers = [
-            temp.as_mut_ptr(),
-            unsafe { temp.as_mut_ptr().add(size) },
-            unsafe { temp.as_mut_ptr().add(2 * size) },
-            unsafe { temp.as_mut_ptr().add(2 * size) },
+            buffer.as_mut_ptr(),
+            unsafe { buffer.as_mut_ptr().add(size) },
+            unsafe { buffer.as_mut_ptr().add(2 * size) },
+            unsafe { buffer.as_mut_ptr().add(2 * size) },
         ];
         self.render_internal(parameters, &mut buffers, size);
     }
