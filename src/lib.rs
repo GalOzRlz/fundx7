@@ -107,7 +107,7 @@ mod stmlib;
 pub const SAMPLE_RATE: f32 = 48000.0;
 
 /// Maximum block size for audio processing
-pub const MAX_BLOCK_SIZE: usize = 24;
+pub const MAX_BLOCK_SIZE: usize = 64;
 
 /// Number of operators for DX7
 const NUM_OPERATORS: usize = 6;
@@ -130,7 +130,7 @@ impl Patch {
         sample_rate: u32,
         duration: std::time::Duration,
     ) -> Vec<f32> {
-        const MAX_BLOCK_SIZE: usize = 64;
+        const MAX_BLOCK_SIZE: usize = 24;
         let n_samples = duration.as_millis() as usize * (sample_rate as usize / 1000) as usize;
         let silence_threshold = 0.0001f32;
         let silence_duration_samples = (sample_rate as usize * 100) / 1000; // 100ms
