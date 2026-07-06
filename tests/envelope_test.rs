@@ -1,5 +1,5 @@
-use dx7::fm::patch::{OpEnvelope, Operator, Patch};
-use dx7::fm::voice::{Parameters, Voice};
+use fundx7::fm::patch::{OpEnvelope, Operator, Patch};
+use fundx7::fm::voice::{Parameters, Voice};
 
 #[test]
 fn test_envelope_triggering() {
@@ -21,10 +21,6 @@ fn test_envelope_triggering() {
     patch.algorithm = 31; // Simple algorithm with one carrier
 
     let sample_rate = 44100;
-    let mut voice = Voice::new(patch, sample_rate as f32);
-
-    // Render with gate OFF first (should be silent)
-    let mut buf1 = vec![0.0f32; 300]; // 3x100 for render_temp
     let params_off = Parameters {
         gate: false,
         sustain: false,
@@ -32,12 +28,14 @@ fn test_envelope_triggering() {
         note: 69.0,
         ..Parameters::default()
     };
-    voice.render_temp(&params_off, &mut buf1);
-    let max_off = buf1.iter().take(100).map(|x| x.abs()).fold(0.0f32, f32::max);
+    let mut voice = Voice::new(patch,params_off, sample_rate as f32);
+
+    // Render with gate OFF first (should be silent)
+    voice.render_temp(64);
+    let max_off = voice.temp_buffer.iter().take(64).map(|x| x.abs()).fold(0.0f32, f32::max);
     println!("Max amplitude with gate OFF: {}", max_off);
 
     // Render with gate ON (should trigger envelope)
-    let mut buf2 = vec![0.0f32; 300];
     let params_on = Parameters {
         gate: true,
         sustain: false,
@@ -45,8 +43,9 @@ fn test_envelope_triggering() {
         note: 69.0,
         ..Parameters::default()
     };
-    voice.render_temp(&params_on, &mut buf2);
-    let max_on = buf2.iter().take(100).map(|x| x.abs()).fold(0.0f32, f32::max);
+    voice.parameters = params_on;
+    voice.render_temp(64);
+    let max_on = voice.temp_buffer.iter().take(100).map(|x| x.abs()).fold(0.0f32, f32::max);
     println!("Max amplitude with gate ON: {}", max_on);
 
     // Check envelope level directly

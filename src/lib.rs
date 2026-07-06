@@ -21,11 +21,11 @@
 //
 // See http://creativecommons.org/licenses/MIT/ for more information.
 
-//! (mostly) Idiomatic Rust port of Mutable Instruments Plaits DX7/FM synthesis engine.
+//! (mostly) Idiomatic Rust port of Mutable Instruments Plaits fundx7/FM synthesis engine.
 //!
 //! This crate provides a port of the FM synthesis components from the
 //! Mutable Instruments Plaits Eurorack module, focusing specifically on
-//! the DX7-style FM synthesis engine.
+//! the fundx7-style FM synthesis engine.
 //!
 //! # Examples
 //!
@@ -36,7 +36,7 @@
 //! // for WAV functionality
 //! use hound::{WavSpec, WavWriter};
 //!
-//! use dx7::{PatchBank, Patch};
+//! use fundx7::{PatchBank, Patch};
 //!
 //! fn generate_wav(patch: Patch, midi_note: f32, sample_rate: u32, duration: Duration) -> Vec<u8> {
 //!     let buf = patch.generate_samples(midi_note, sample_rate, duration);
@@ -109,10 +109,10 @@ pub const SAMPLE_RATE: f32 = 48000.0;
 /// Maximum block size for audio processing
 pub const MAX_BLOCK_SIZE: usize = 24;
 
-/// Number of operators for DX7
+/// Number of operators for fundx7
 const NUM_OPERATORS: usize = 6;
 
-/// Number of algorithms for DX7;
+/// Number of algorithms for fundx7;
 const NUM_ALGORITHMS: usize = 32;
 
 pub use fm::patch::{Patch, PatchBank};
@@ -135,16 +135,9 @@ impl Patch {
         let silence_threshold = 0.0001f32;
         let silence_duration_samples = (sample_rate as usize * 100) / 1000; // 100ms
 
-        let mut voice = Voice::new(self.clone(), sample_rate as f32);
-        let mut lfo = Lfo::new();
-        lfo.init(sample_rate as f32);
-        lfo.set(&self.modulations);
-        lfo.reset();
-
-        let mut output = Vec::new();
-
         // Phase 1: Render with gate on for the requested duration
-        let mut parameters = Parameters {
+
+        let parameters = Parameters {
             gate: true,
             sustain: false,
             velocity: 1.0,
@@ -152,40 +145,27 @@ impl Patch {
             ..Parameters::default()
         };
 
+        let mut voice = Voice::new(self.clone(), parameters, sample_rate as f32);
+
+        let mut output = Vec::new();
+
         let mut remaining = n_samples;
         while remaining > 0 {
             let block_size = remaining.min(MAX_BLOCK_SIZE);
-
-            // Step the LFO
-            lfo.step(block_size as f32);
-
-            // Apply LFO modulations to parameters
-            parameters.pitch_mod = lfo.pitch_mod();
-            parameters.amp_mod = lfo.amp_mod();
-
-            let mut buf = vec![0.0_f32; block_size * 3]; // render_temp needs 3x size
-            voice.render_temp(&parameters, &mut buf);
-            output.extend_from_slice(&buf[..block_size]);
+            voice.render_temp(block_size);
+            output.extend_from_slice(&voice.temp_buffer[..block_size]);
             remaining -= block_size;
         }
 
         // Phase 2: Turn gate off and render until 100ms of silence
-        parameters.gate = false;
+        voice.parameters.gate = false;
         let mut consecutive_silent_samples = 0;
 
         loop {
-            // Step the LFO
-            lfo.step(MAX_BLOCK_SIZE as f32);
-
-            // Apply LFO modulations to parameters
-            parameters.pitch_mod = lfo.pitch_mod();
-            parameters.amp_mod = lfo.amp_mod();
-
-            let mut chunk = vec![0.0_f32; MAX_BLOCK_SIZE * 3];
-            voice.render_temp(&parameters, &mut chunk);
+            voice.render_temp(MAX_BLOCK_SIZE);
 
             // Check for silence in the rendered output
-            let rendered = &chunk[..MAX_BLOCK_SIZE];
+            let rendered = &voice.temp_buffer[..MAX_BLOCK_SIZE];
             for &sample in rendered {
                 if sample.abs() < silence_threshold {
                     consecutive_silent_samples += 1;

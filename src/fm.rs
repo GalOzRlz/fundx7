@@ -21,7 +21,7 @@
 //
 // See http://creativecommons.org/licenses/MIT/ for more information.
 
-//! DX7-style FM synthesis engine
+//! fundx7-style FM synthesis engine
 
 pub mod patch;
 pub mod dx_units;
