@@ -152,14 +152,6 @@ impl Patch {
         let mut remaining = n_samples;
         while remaining > 0 {
             let block_size = remaining.min(MAX_BLOCK_SIZE);
-
-            // Step the LFO
-            voice.lfo.step(block_size as f32);
-
-            // Apply LFO modulations to parameters
-            voice.parameters.pitch_mod = voice.lfo.pitch_mod();
-            voice.parameters.amp_mod = voice.lfo.amp_mod();
-
             voice.render_temp(block_size);
             output.extend_from_slice(&voice.temp_buffer[..block_size]);
             remaining -= block_size;
@@ -170,13 +162,6 @@ impl Patch {
         let mut consecutive_silent_samples = 0;
 
         loop {
-            // Step the LFO
-            voice.lfo.step(MAX_BLOCK_SIZE as f32);
-
-            // Apply LFO modulations to parameters
-            voice.parameters.pitch_mod = voice.lfo.pitch_mod();
-            voice.parameters.amp_mod = voice.lfo.amp_mod();
-
             voice.render_temp(MAX_BLOCK_SIZE);
 
             // Check for silence in the rendered output

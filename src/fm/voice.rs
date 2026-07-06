@@ -120,20 +120,30 @@ impl Voice {
             parameters,
             lfo: Lfo::new(),
         };
+        ret.reset();
+        ret
+    }
 
+    fn reset(&mut self) {
         let native_sr = 44100.0;
-        let envelope_scale = native_sr * ret.one_hz;
+        let envelope_scale = native_sr * self.one_hz;
 
         for i in 0..NUM_OPERATORS {
-            ret.operator[i].reset();
-            ret.operator_envelope[i].init(envelope_scale);
+            self.operator[i].reset();
+            self.operator_envelope[i].init(envelope_scale);
         }
-        ret.pitch_envelope.init(envelope_scale);
-        ret.setup();
-        ret.lfo.init(sample_rate);
-        ret.lfo.set(&patch.modulations);
-        ret.lfo.reset();
-        ret
+        self.pitch_envelope.init(envelope_scale);
+        self.setup();
+        self.lfo.init(self.sample_rate);
+        self.lfo.set(&self.patch.modulations);
+        self.lfo.reset();
+    }
+
+    /// move the lfo by samples to apply modulation parameters
+    pub fn step_lfo(&mut self, samples: f32){
+        self.lfo.step(samples);
+        self.parameters.pitch_mod = self.lfo.pitch_mod();
+        self.parameters.amp_mod = self.lfo.amp_mod();
     }
 
     /// Pre-computes patch-dependent data
@@ -188,6 +198,7 @@ impl Voice {
     pub fn render_temp(&mut self, size: usize) {
     assert!(size <= MAX_BUFFER_SIZE);
         self.temp_buffer.fill(0.0);
+        self.step_lfo(size as f32);
         let buffer = &mut self.temp_buffer[..size * 3];
         let mut buffers = [
             buffer.as_mut_ptr(),
