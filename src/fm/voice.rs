@@ -37,6 +37,7 @@ use crate::{MAX_BLOCK_SIZE, NUM_OPERATORS};
 use fundsp::prelude::*;
 
 /// Voice parameters for rendering
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Parameters {
     /// Sustain mode (envelope scrubbing)
     pub sustain: bool,
@@ -90,11 +91,12 @@ pub struct Voice {
     patch: Patch,
     dirty: bool,
     pub temp_buffer: [f32; MAX_BUFFER_SIZE * 3],
+    pub parameters: Parameters,
 }
 
 impl Voice {
     /// Creates a new voice
-    pub fn new(patch: Patch, sample_rate: f32) -> Self {
+    pub fn new(patch: Patch, parameters: Parameters, sample_rate: f32) -> Self {
         let mut ret = Self {
             algorithms: Algorithms::new(),
             sample_rate,
@@ -113,6 +115,7 @@ impl Voice {
             patch,
             dirty: true,
             temp_buffer: [0.0; MAX_BUFFER_SIZE * 3],
+            parameters,
         };
 
         let native_sr = 44100.0;
@@ -177,7 +180,7 @@ impl Voice {
     }
 
     /// Renders audio with single temp buffer
-    pub fn render_temp(&mut self, parameters: &Parameters, size: usize) {
+    pub fn render_temp(&mut self, size: usize) {
     assert!(size <= MAX_BUFFER_SIZE);
         self.temp_buffer.fill(0.0);
         let buffer = &mut self.temp_buffer[..size * 3];
@@ -187,7 +190,7 @@ impl Voice {
             unsafe { buffer.as_mut_ptr().add(2 * size) },
             unsafe { buffer.as_mut_ptr().add(2 * size) },
         ];
-        self.render_internal(parameters, &mut buffers, size);
+        self.render_internal(&self.parameters.clone(), &mut buffers, size);
     }
 
     fn render_internal(
@@ -316,6 +319,6 @@ impl Voice {
 
 impl Default for Voice {
     fn default() -> Self {
-        Self::new(Patch::default(), 44100.0)
+        Self::new(Patch::default(), Parameters::default(), 44100.0)
     }
 }
