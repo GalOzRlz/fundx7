@@ -115,9 +115,11 @@ const NUM_OPERATORS: usize = 6;
 /// Number of algorithms for fundx7;
 const NUM_ALGORITHMS: usize = 32;
 
+use fundsp::buffer::BufferVec;
+use fundsp::combinator::An;
+use fundsp::prelude64::{dc, shared, var};
 pub use fm::patch::{Patch, PatchBank};
 
-use fm::lfo::Lfo;
 use fm::voice::Parameters;
 use fm::voice::Voice;
 
@@ -130,13 +132,12 @@ impl Patch {
         sample_rate: u32,
         duration: std::time::Duration,
     ) -> Vec<f32> {
-        const MAX_BLOCK_SIZE: usize = 24; // Match C++ implementation
+        const MAX_BLOCK_SIZE: usize = 64; // Match FunDSPs maximal block
         let n_samples = duration.as_millis() as usize * (sample_rate as usize / 1000) as usize;
         let silence_threshold = 0.0001f32;
         let silence_duration_samples = (sample_rate as usize * 100) / 1000; // 100ms
 
         // Phase 1: Render with gate on for the requested duration
-
         let parameters = Parameters {
             gate: true,
             sustain: false,
@@ -145,27 +146,32 @@ impl Patch {
             ..Parameters::default()
         };
 
-        let mut voice = Voice::new(self.clone(), parameters, sample_rate as f32);
+        let voice = Voice::new(self.clone(), parameters, sample_rate as f32);
 
         let mut output = Vec::new();
 
+        let mut input_buff = BufferVec::new(2);
+        let mut output_buff = BufferVec::new(1);
+        let gate = shared(1.0);
+        let mut synth = (dc(midi_note) |  var(&gate) ) >> An(voice);
         let mut remaining = n_samples;
+
         while remaining > 0 {
             let block_size = remaining.min(MAX_BLOCK_SIZE);
-            voice.render_temp(block_size);
-            output.extend_from_slice(&voice.temp_buffer[..block_size]);
+            synth.process(block_size, &input_buff.buffer_ref(), &mut output_buff.buffer_mut());
+            output.extend_from_slice(&output_buff.channel_f32(0)[..block_size]);
             remaining -= block_size;
         }
 
         // Phase 2: Turn gate off and render until 100ms of silence
-        voice.parameters.gate = false;
+        gate.set_value(-1.0);
         let mut consecutive_silent_samples = 0;
 
         loop {
-            voice.render_temp(MAX_BLOCK_SIZE);
+            synth.process(MAX_BLOCK_SIZE, &input_buff.buffer_ref(), &mut output_buff.buffer_mut());
 
             // Check for silence in the rendered output
-            let rendered = &voice.temp_buffer[..MAX_BLOCK_SIZE];
+            let rendered = &output_buff.channel_f32(0)[..MAX_BLOCK_SIZE];
             for &sample in rendered {
                 if sample.abs() < silence_threshold {
                     consecutive_silent_samples += 1;

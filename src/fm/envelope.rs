@@ -34,7 +34,7 @@ use super::dx_units::{operator_envelope_increment, operator_level, pitch_envelop
 const PREVIOUS_LEVEL: f32 = -100.0;
 
 /// Generic multi-segment envelope
-#[derive(Copy, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct Envelope<const NUM_STAGES: usize, const RESHAPE_ASCENDING: bool> {
     stage: usize,
     phase: f32,
@@ -210,7 +210,7 @@ impl<const NUM_STAGES: usize, const RESHAPE_ASCENDING: bool> Default
 }
 
 /// Operator envelope with fundx7-specific quirks (4 stages, reshaped ascending)
-#[derive(Copy, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct OperatorEnvelope {
     envelope: Envelope<4, true>,
 }
@@ -298,6 +298,7 @@ impl Default for OperatorEnvelope {
 }
 
 /// Pitch envelope (4 stages, no reshaping)
+#[derive(Debug, Clone, Copy)]
 pub struct PitchEnvelope {
     envelope: Envelope<4, false>,
 }

@@ -23,6 +23,7 @@
 
 //! fundx7 voice - main synthesis entry point
 
+use fundsp::numeric_array::generic_array::GenericArray;
 use super::algorithms::Algorithms;
 use super::dx_units::{
     amp_mod_sensitivity, frequency_ratio, keyboard_scaling, normalize_velocity, operator_level,
@@ -33,7 +34,7 @@ use super::operator::Operator;
 use super::patch::Patch;
 
 use crate::stmlib::dsp::semitones_to_ratio_safe;
-use crate::{MAX_BLOCK_SIZE, NUM_OPERATORS};
+use crate::NUM_OPERATORS;
 use fundsp::prelude::*;
 use crate::fm::lfo::Lfo;
 
@@ -74,6 +75,7 @@ impl Default for Parameters {
 }
 
 /// fundx7 FM voice
+#[derive(Debug, Clone, Copy)]
 pub struct Voice {
     algorithms: Algorithms,
     sample_rate: f32,
@@ -91,7 +93,7 @@ pub struct Voice {
     feedback_state: [f32; 2],
     patch: Patch,
     dirty: bool,
-    /// internal audio buffer for each render call
+    /// internal audio buffer for each render call via render_temp()
     pub temp_buffer: [f32; MAX_BUFFER_SIZE * 3],
     /// voice parameters
     pub parameters: Parameters,
@@ -181,7 +183,6 @@ impl Voice {
     /// Renders audio with 2 output buffers (out and aux)
     pub fn render_stereo(
         &mut self,
-        parameters: &Parameters,
         temp: &mut [f32],
         out: &mut [f32],
         aux: &mut [f32],
@@ -198,7 +199,7 @@ impl Voice {
 
     /// Renders audio with single temp buffer
     pub fn render_temp(&mut self, size: usize) {
-    assert!(size <= MAX_BUFFER_SIZE);
+    // assert!(size <= MAX_BUFFER_SIZE);
         self.temp_buffer.fill(0.0);
         self.step_lfo(size as f32);
         let buffer = &mut self.temp_buffer[..size * 3];
@@ -334,8 +335,39 @@ impl Voice {
     }
 }
 
+/// A DX7 synth based on Sysex configuration files.
+/// Input 0: incoming midi note value (doesn't support bending or micro-tuning for now)
+/// Input 1: Gate signal
 impl Default for Voice {
     fn default() -> Self {
         Self::new(Patch::default(), Parameters::default(), 44100.0)
+    }
+}
+
+impl AudioNode for Voice {
+    const ID: u64 = 0;
+
+    type Inputs = U2;
+    type Outputs = U1;
+
+    fn reset(&mut self) {
+        Voice::reset(self);
+    }
+
+    fn tick(&mut self, input: &Frame<f32, U2>) -> Frame<f32, U1> {
+        self.parameters.note = input[0];
+        self.parameters.gate = input[1] != -1.0;
+        self.render_temp(1);
+        let generic_array = GenericArray::generate(|_| self.temp_buffer[0]);
+        Frame::new(generic_array)
+    }
+
+    fn process(&mut self, size: usize, input: &BufferRef, output: &mut BufferMut) {
+        self.parameters.note = input.at_f32(0, 5);
+        self.parameters.gate = input.at_f32(1, 5) != -1.0;
+        self.render_temp(size);
+
+        let out_slice = output.channel_f32_mut(0);
+        out_slice.copy_from_slice(&self.temp_buffer[..size]);
     }
 }

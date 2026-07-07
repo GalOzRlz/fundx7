@@ -59,6 +59,7 @@ impl From<u8> for Waveform {
 }
 
 /// fundx7-style LFO
+#[derive(Debug, Clone, Copy)]
 pub struct Lfo {
     phase: f32,
     frequency: f32,
