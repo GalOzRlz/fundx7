@@ -118,6 +118,7 @@ const NUM_ALGORITHMS: usize = 32;
 use fundsp::buffer::BufferVec;
 use fundsp::combinator::An;
 use fundsp::prelude64::{dc, shared, var};
+use fundsp::prelude::constant;
 pub use fm::patch::{Patch, PatchBank};
 
 use fm::voice::Parameters;
@@ -150,10 +151,10 @@ impl Patch {
 
         let mut output = Vec::new();
 
-        let mut input_buff = BufferVec::new(2);
+        let mut input_buff = BufferVec::new(3);
         let mut output_buff = BufferVec::new(1);
         let gate = shared(1.0);
-        let mut synth = (dc(midi_note) |  var(&gate) ) >> An(voice);
+        let mut synth = (dc(midi_note) |  var(&gate) | constant(1.0) ) >> An(voice);
         let mut remaining = n_samples;
 
         while remaining > 0 {
