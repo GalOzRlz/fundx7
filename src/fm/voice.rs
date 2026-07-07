@@ -335,6 +335,7 @@ impl Voice {
     }
 }
 
+// todo: add velocity as well.
 /// A DX7 synth based on Sysex configuration files.
 /// Input 0: incoming midi note value (doesn't support bending or micro-tuning for now)
 /// Input 1: Gate signal
@@ -363,8 +364,8 @@ impl AudioNode for Voice {
     }
 
     fn process(&mut self, size: usize, input: &BufferRef, output: &mut BufferMut) {
-        self.parameters.note = input.at_f32(0, 5);
-        self.parameters.gate = input.at_f32(1, 5) != -1.0;
+        self.parameters.note = input.at_f32(0, 0);
+        self.parameters.gate = input.at_f32(1, 0) != -1.0;
         self.render_temp(size);
 
         let out_slice = output.channel_f32_mut(0);
