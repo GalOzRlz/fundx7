@@ -93,7 +93,7 @@ pub struct Voice {
     feedback_state: [f32; 2],
     patch: Patch,
     dirty: bool,
-    /// internal audio buffer for each render call
+    /// internal audio buffer for each render call via render_temp()
     pub temp_buffer: [f32; MAX_BUFFER_SIZE * 3],
     /// voice parameters
     pub parameters: Parameters,
@@ -199,7 +199,7 @@ impl Voice {
 
     /// Renders audio with single temp buffer
     pub fn render_temp(&mut self, size: usize) {
-    assert!(size <= MAX_BUFFER_SIZE);
+    // assert!(size <= MAX_BUFFER_SIZE);
         self.temp_buffer.fill(0.0);
         self.step_lfo(size as f32);
         let buffer = &mut self.temp_buffer[..size * 3];
@@ -363,8 +363,8 @@ impl AudioNode for Voice {
     }
 
     fn process(&mut self, size: usize, input: &BufferRef, output: &mut BufferMut) {
-        self.parameters.gate = input.at_f32(1, 0) != -1.0;
-        self.parameters.note = input.at_f32(0, 0);
+        self.parameters.note = input.at_f32(0, 5);
+        self.parameters.gate = input.at_f32(1, 5) != -1.0;
         self.render_temp(size);
 
         let out_slice = output.channel_f32_mut(0);

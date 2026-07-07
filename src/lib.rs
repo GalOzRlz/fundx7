@@ -117,7 +117,6 @@ const NUM_ALGORITHMS: usize = 32;
 
 pub use fm::patch::{Patch, PatchBank};
 
-use fm::lfo::Lfo;
 use fm::voice::Parameters;
 use fm::voice::Voice;
 
@@ -130,13 +129,12 @@ impl Patch {
         sample_rate: u32,
         duration: std::time::Duration,
     ) -> Vec<f32> {
-        const MAX_BLOCK_SIZE: usize = 24; // Match C++ implementation
+        const MAX_BLOCK_SIZE: usize = 64; // Match FunDSPs maximal block
         let n_samples = duration.as_millis() as usize * (sample_rate as usize / 1000) as usize;
         let silence_threshold = 0.0001f32;
         let silence_duration_samples = (sample_rate as usize * 100) / 1000; // 100ms
 
         // Phase 1: Render with gate on for the requested duration
-
         let parameters = Parameters {
             gate: true,
             sustain: false,
