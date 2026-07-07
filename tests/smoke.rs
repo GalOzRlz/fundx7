@@ -54,7 +54,7 @@ fn dsp_test() {
     //                           midi note 40 | gate on
     let mut synth = (dc(40.0) |  dc(1.0) ) >> An(voice);
     let mut input = BufferVec::new(2);
-    let mut output = BufferVec::new(2);
+    let mut output = BufferVec::new(1);
     synth.process(64, &input.buffer_ref(), &mut output.buffer_mut());
     let out_slice = output.channel_f32(0);
     assert_ne!(input.channel_f32(0), out_slice);
