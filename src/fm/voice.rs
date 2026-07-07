@@ -124,11 +124,11 @@ impl Voice {
             parameters,
             lfo: Lfo::new(),
         };
-        ret.reset();
+        ret.init();
         ret
     }
 
-    fn reset(&mut self) {
+    fn init(&mut self) {
         let native_sr = 44100.0;
         let envelope_scale = native_sr * self.one_hz;
 
@@ -352,7 +352,7 @@ impl AudioNode for Voice {
     type Outputs = U1;
 
     fn reset(&mut self) {
-        Voice::reset(self);
+        self.lfo.reset()
     }
 
     fn tick(&mut self, input: &Frame<f32, U2>) -> Frame<f32, U1> {
