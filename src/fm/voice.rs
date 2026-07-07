@@ -335,10 +335,10 @@ impl Voice {
     }
 }
 
-// todo: add velocity as well.
 /// A DX7 synth based on Sysex configuration files.
 /// Input 0: incoming midi note value (doesn't support bending or micro-tuning for now)
 /// Input 1: Gate signal
+/// Input 2: velocity between 0.0 to 1.0
 impl Default for Voice {
     fn default() -> Self {
         Self::new(Patch::default(), Parameters::default(), 44100.0)
@@ -348,16 +348,17 @@ impl Default for Voice {
 impl AudioNode for Voice {
     const ID: u64 = 0;
 
-    type Inputs = U2;
+    type Inputs = U3;
     type Outputs = U1;
 
     fn reset(&mut self) {
         self.lfo.reset()
     }
 
-    fn tick(&mut self, input: &Frame<f32, U2>) -> Frame<f32, U1> {
+    fn tick(&mut self, input: &Frame<f32, U3>) -> Frame<f32, U1> {
         self.parameters.note = input[0];
         self.parameters.gate = input[1] != -1.0;
+        self.parameters.velocity = input[2].clamp(0.0, 1.0);
         self.render_temp(1);
         let generic_array = GenericArray::generate(|_| self.temp_buffer[0]);
         Frame::new(generic_array)
@@ -366,6 +367,7 @@ impl AudioNode for Voice {
     fn process(&mut self, size: usize, input: &BufferRef, output: &mut BufferMut) {
         self.parameters.note = input.at_f32(0, 0);
         self.parameters.gate = input.at_f32(1, 0) != -1.0;
+        self.parameters.velocity = input.at_f32(2, 0).clamp(0.0, 1.0);
         self.render_temp(size);
 
         let out_slice = output.channel_f32_mut(0);

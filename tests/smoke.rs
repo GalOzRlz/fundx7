@@ -1,6 +1,7 @@
 use fundsp::prelude64::{dc, An, BufferVec};
 use std::io::Write;
 use std::time::Duration;
+use fundsp::prelude::constant;
 
 mod common;
 
@@ -52,7 +53,7 @@ fn dsp_test() {
     };
     let voice = Voice::new(patch, parameters, SAMPLE_RATE);
     //                           midi note 40 | gate on
-    let mut synth = (dc(40.0) |  dc(1.0) ) >> An(voice);
+    let mut synth = (dc(40.0) |  dc(1.0) | constant(1.0)) >> An(voice);
     let mut input = BufferVec::new(2);
     let mut output = BufferVec::new(1);
     synth.process(64, &input.buffer_ref(), &mut output.buffer_mut());
