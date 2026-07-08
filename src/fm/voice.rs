@@ -346,7 +346,7 @@ impl Default for Voice {
 }
 
 impl AudioNode for Voice {
-    const ID: u64 = 0;
+    const ID: u64 = 9000009;
 
     type Inputs = U3;
     type Outputs = U1;
