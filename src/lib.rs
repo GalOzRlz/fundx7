@@ -34,6 +34,7 @@
 //! use fundx7::fm::voice::{Parameters, Voice};
 //! use fundx7::{PatchBank, SAMPLE_RATE};
 //! use fundsp::prelude64::{dc, An, BufferVec};
+//! use fundsp::prelude::constant;
 //! use hound::{WavSpec, WavWriter};
 //!
 //! fn render_sample() {
@@ -43,8 +44,8 @@
 //!     let patch_bank = PatchBank::new(&patch_bank_bytes);
 //!     let patch = patch_bank.patches[4];
 //!     let voice = Voice::new(patch, Parameters::default(), SAMPLE_RATE);
-//!     //!           midi note 40 | gate on
-//!     let mut synth = (dc(40.0) |  dc(1.0) ) >> An(voice);
+//!     //           midi note 40 | gate on
+//!     let mut synth = (dc(40.0) |  dc(1.0) | constant(1.0) ) >> An(voice);
 //!     let mut input = BufferVec::new(2);
 //!     let mut output = BufferVec::new(2);
 //!     synth.process(64, &input.buffer_ref(), &mut output.buffer_mut());
