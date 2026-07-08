@@ -21,14 +21,53 @@
 //
 // See http://creativecommons.org/licenses/MIT/ for more information.
 
-//! (mostly) Idiomatic Rust port of Mutable Instruments Plaits fundx7/FM synthesis engine.
+//! (mostly) Idiomatic Rust port of Mutable Instruments Plaits Dx7/FM synthesis engine - now forked with FunDSP bindings.
 //!
-//! This crate provides a port of the FM synthesis components from the
+//! The original dx7 crate provides a port of the FM synthesis components from the
 //! Mutable Instruments Plaits Eurorack module, focusing specifically on
-//! the fundx7-style FM synthesis engine.
+//! the fundx7-style FM synthesis engine. This fork also transform the Voice struct into a Fundsp AudioNode.
+//! This in turn means one can use it with Fundsp graphs as with any other unit.
 //!
 //! # Examples
 //!
+//! ```
+//! use fundx7::fm::voice::{Parameters, Voice};
+//! use fundx7::{PatchBank, SAMPLE_RATE};
+//! use fundsp::prelude64::{dc, An, BufferVec};
+//! use hound::{WavSpec, WavWriter};
+//!
+//! fn render_sample() {
+//!     let patch_bank_bytes =
+//!         std::fs::read("star1-fast-decay.syx").expect("test file star1-fast-decay.syx not found");
+//!
+//!     let patch_bank = PatchBank::new(&patch_bank_bytes);
+//!     let patch = patch_bank.patches[4];
+//!     let voice = Voice::new(patch, Parameters::default(), SAMPLE_RATE);
+//!     //!           midi note 40 | gate on
+//!     let mut synth = (dc(40.0) |  dc(1.0) ) >> An(voice);
+//!     let mut input = BufferVec::new(2);
+//!     let mut output = BufferVec::new(2);
+//!     synth.process(64, &input.buffer_ref(), &mut output.buffer_mut());
+//!
+//!
+//!     let spec = WavSpec {
+//!         channels: 1,
+//!         sample_rate: SAMPLE_RATE as u32,
+//!         bits_per_sample: 32,
+//!         sample_format: hound::SampleFormat::Float,
+//!     };
+//!
+//!     let mut writer = WavWriter::create("sample.wav", spec).unwrap();
+//!
+//!     for &sample in output.channel_f32(0) {
+//!         writer.write_sample(sample).unwrap();
+//!     }
+//! }
+//! ```
+//!
+//! The standard Patch::generate_samples() method now is also using the Fundsp graphical notation to drive rendering.
+//!
+//! Offline Usage is same as before:
 //! ```
 //! use std::time::Duration;
 //! use std::io::Write;
@@ -151,7 +190,7 @@ impl Patch {
 
         let mut output = Vec::new();
 
-        let mut input_buff = BufferVec::new(3);
+        let input_buff = BufferVec::new(3);
         let mut output_buff = BufferVec::new(1);
         let gate = shared(1.0);
         let mut synth = (dc(midi_note) |  var(&gate) | constant(1.0) ) >> An(voice);
